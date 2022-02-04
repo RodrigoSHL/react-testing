@@ -1,7 +1,18 @@
 import React from 'react'
-import {screen, render, fireEvent} from '@testing-library/react'
+import {screen, render, fireEvent, waitFor} from '@testing-library/react'
+import { rest } from 'msw'
+import { setupServer } from 'msw/node'
 
 import Form from '../form/Form'
+
+const server = setupServer(
+    rest.post('/tasks', (req, res, ctx) => {
+        return res(ctx.status(201))
+    }),
+)
+  
+beforeAll(() => server.listen())
+afterAll(() => server.close())
 
 beforeEach(()=> render(<Form/>))
 
@@ -31,7 +42,7 @@ describe('When the form is mounted', () => {
 })
 
 describe('When the user submits the form without values', () => {
-    it('should display validation messages', () => {
+    it('should display validation messages', async () => {
         expect(screen.queryByText(/the name is required/i)).not.toBeInTheDocument()
         expect(screen.queryByText(/the description is required/i)).not.toBeInTheDocument()
         expect(screen.queryByText(/the state is required/i)).not.toBeInTheDocument()
@@ -42,9 +53,10 @@ describe('When the user submits the form without values', () => {
         expect(screen.queryByText(/the description is required/i)).toBeInTheDocument()
         expect(screen.queryByText(/the state is required/i)).toBeInTheDocument()
 
-
+        await waitFor(() =>
+            expect(screen.getByRole('button', {name:/submit/i})).not.toBeDisabled()
+        )
     })
-    
 })
 
 describe('When the user blurs an empty field', () => {
@@ -68,4 +80,18 @@ describe('When the user blurs an empty field', () => {
         expect(screen.queryByText(/the description is required/i)).toBeInTheDocument()
     })
     
+})
+
+describe('When the user submit form', () => {
+    it('should the submit button be disabled until request is done', async () => {
+        expect(screen.getByRole('button', {name:/submit/i})).not.toBeDisabled()
+        
+        fireEvent.click(screen.getByRole('button', {name:/submit/i}))
+
+        expect(screen.getByRole('button', {name:/submit/i})).toBeDisabled()
+
+        await waitFor(() =>
+            expect(screen.getByRole('button', {name:/submit/i})).not.toBeDisabled()
+        )
+    })    
 })

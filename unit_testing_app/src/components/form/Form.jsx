@@ -3,15 +3,17 @@ import { Button, InputLabel, Select } from '@mui/material';
 import { React, useState } from 'react';
 
 export const Form = () => {
+  const [sendData, setSendData] = useState(false);
+
   const [formErrors, setFormErrors] = useState({
     name: '',
     description: '',
     state: ''
   })
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
+    setSendData(true);
     const {name,description,state} =  e.target.elements
 
     if(!name.value) {
@@ -34,6 +36,12 @@ export const Form = () => {
         state: 'The state is required'
       }))
     }
+
+    await fetch('/tasks', {
+      method: 'POST',
+      body: JSON.stringify({})
+    })
+    setSendData(false)
   }
 
   const handleBlur = (e) => {
@@ -76,7 +84,10 @@ export const Form = () => {
   
           </Select>
           {formErrors.state.length && <p>{formErrors.state}</p>}
-          <Button type='submit'>
+          <Button 
+            type='submit'
+            disabled={sendData}
+          >
             Submit
           </Button>
       </form>
