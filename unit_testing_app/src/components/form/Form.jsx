@@ -1,6 +1,7 @@
 import TextField from '@mui/material/TextField'
 import { Button, InputLabel, Select } from '@mui/material';
 import { React, useState } from 'react';
+import { waitFor } from '@testing-library/react';
 
 export const Form = () => {
   const [sendData, setSendData] = useState(false);
@@ -11,31 +12,24 @@ export const Form = () => {
     state: ''
   })
 
+  const validateField = ({name, value}) => {
+    setFormErrors((prevState) => ({...prevState, [name]: value.length ? '' : `The ${name} is required`}))
+  }
+
+  const validateForm = ({name,description,state}) => {
+    validateField({name:'name',value: name.value});
+    validateField({name:'description',value: description.value});
+    validateField({name:'state',value: state.value});
+
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     setSendData(true);
+
     const {name,description,state} =  e.target.elements
-
-    if(!name.value) {
-      setFormErrors((prevState) => ({
-        ...prevState,
-        name: 'The name is required'
-      }))
-    }
-
-    if(!description.value) {
-      setFormErrors((prevState) => ({
-        ...prevState,
-        description: 'The description is required'
-      }))
-    }
-
-    if(!state.value) {
-      setFormErrors((prevState) => ({
-        ...prevState,
-        state: 'The state is required'
-      }))
-    }
+    validateForm({name,description,state})
 
     await fetch('/tasks', {
       method: 'POST',
