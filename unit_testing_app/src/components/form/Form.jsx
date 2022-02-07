@@ -1,71 +1,97 @@
 import TextField from '@mui/material/TextField'
 import { Button, InputLabel, Select } from '@mui/material';
 import { React, useState } from 'react';
-import { waitFor } from '@testing-library/react';
+import { saveTask } from '../../services/TaskServices';
+import { CREATED_STATUS, ERROR_SERVER_STATUS, INVALID_REQUEST_STATUS } from '../../consts/httpStatus';
 
 export const Form = () => {
   const [sendData, setSendData] = useState(false);
-
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [serverError, setServerError] = useState('');
   const [formErrors, setFormErrors] = useState({
     name: '',
     description: '',
-    state: ''
-  })
+    state: '',
+  });
 
   const validateField = ({name, value}) => {
-    setFormErrors((prevState) => ({...prevState, [name]: value.length ? '' : `The ${name} is required`}))
+    setFormErrors((prevState) => ({
+      ...prevState,
+      [name]: value.length ? '' : `The ${name} is required`,
+    }))
   }
 
   const validateForm = ({name,description,state}) => {
-    validateField({name:'name',value: name.value});
-    validateField({name:'description',value: description.value});
-    validateField({name:'state',value: state.value});
-
+    validateField({name:'name',value: name});
+    validateField({name:'description',value: description});
+    validateField({name:'state',value: state});
   }
+
+  //const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     setSendData(true);
 
-    const {name,description,state} =  e.target.elements
-    validateForm({name,description,state})
+    const {name,description,state} =  e.target.elements;
 
-    await fetch('/tasks', {
-      method: 'POST',
-      body: JSON.stringify({})
-    })
-    setSendData(false)
+    validateForm({name: name.value, description: description.value, state: state.value});
+    
+    const response = await saveTask({
+      name: name.value, 
+      description: description.value, 
+      state: state.value
+    });
+    
+    if(response.status === CREATED_STATUS) {
+      e.target.reset();
+      setIsSuccess(true);
+    } 
+    if(response.status === ERROR_SERVER_STATUS){
+      setServerError('Unexpected error, please try again')
+    }
+    if(response.status === INVALID_REQUEST_STATUS){
+      const data = await response.json();
+      setServerError(data.message)
+    }
+
+    setSendData(false);
   }
 
   const handleBlur = (e) => {
-    const {name, value} = e.target
-    setFormErrors({...formErrors, [name]: value.length ? '' : `The ${name} is required`})
+    const {name, value} = e.target;
+    validateField({name, value});
   }
 
   return (
     <>
       <h1>Create task</h1>
+      {
+        isSuccess && <p>Task saved</p>
+      }
+      {
+        <p>{serverError}</p>
+      }
       <form onSubmit={handleSubmit}>
           <TextField
             label="name" 
             id="name"
+            name="name"
             helperText={formErrors.name}
             onBlur={handleBlur}
-            name="name"
+
           />
           <TextField
             label="description" 
             id="description"
             name="description"
-            onBlur={handleBlur}
             helperText={formErrors.description}
-
+            onBlur={handleBlur}
           />
           <InputLabel htmlFor="state">State</InputLabel>
           <Select
             native
-            value=""
             inputProps={{
               name: 'state',
               id: 'state'
@@ -84,6 +110,7 @@ export const Form = () => {
           >
             Submit
           </Button>
+          
       </form>
     </>
   )

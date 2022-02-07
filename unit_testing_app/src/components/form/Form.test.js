@@ -4,17 +4,25 @@ import { rest } from 'msw'
 import { setupServer } from 'msw/node'
 
 import Form from '../form/Form'
+import { CREATED_STATUS,ERROR_SERVER_STATUS, INVALID_REQUEST_STATUS } from '../../consts/httpStatus'
 
 const server = setupServer(
     rest.post('/tasks', (req, res, ctx) => {
-        return res(ctx.status(201))
+        const {name, description, state} = req.body;
+        if( name && description && state) {
+            return res(ctx.status(CREATED_STATUS))
+        }
+        return res(ctx.status(ERROR_SERVER_STATUS))
     }),
 )
   
 beforeAll(() => server.listen())
+
 afterAll(() => server.close())
 
 beforeEach(()=> render(<Form/>))
+
+afterEach(() => server.resetHandlers())
 
 describe('When the form is mounted', () => {
     it('there must be a created product form page', () => {
@@ -82,7 +90,7 @@ describe('When the user blurs an empty field', () => {
     
 })
 
-describe('When the user submit form', () => {
+describe('When the user submit form and the server return created status', () => {
     it('should the submit button be disabled until request is done', async () => {
         const submitBtn = screen.getByRole('button', {name:/submit/i});
         expect(submitBtn).not.toBeDisabled()
@@ -91,6 +99,52 @@ describe('When the user submit form', () => {
 
         expect(submitBtn).toBeDisabled()
 
-        await waitFor(() => expect(submitBtn).not.toBeDisabled())
+        await waitFor(() =>
+            expect(submitBtn).not.toBeDisabled())
+    })    
+
+    it('the form must display the success message "Task saved" and clean the fields values', async () => {
+        const nameInput = screen.getByLabelText(/name/i);
+        const descriptionInput = screen.getByLabelText(/description/i);
+        const stateInput = screen.getByLabelText(/state/i);
+
+        fireEvent.change(nameInput, {target: {name: 'name', value: 'tasking test'},})
+        fireEvent.change(descriptionInput, {target: {name: 'name', value: 'task complete without observations'}})
+        fireEvent.change(stateInput, {target: {name: 'name', value: '3'}})
+
+        fireEvent.click(screen.getByRole('button', {name:/submit/i}));
+
+        await waitFor(() => expect(screen.getByText(/task saved/i)).toBeInTheDocument())
+
+        expect(nameInput).toHaveValue('')
+        expect(descriptionInput).toHaveValue('')
+        expect(stateInput).toHaveValue('')
+    })  
+})
+
+describe('When the user submit form , the server returns unexpected error', () => {
+    it('the form page must display the error message "Unexpected error, please try again"', async () => {
+        fireEvent.click(screen.getByRole('button', {name:/submit/i}));
+
+        await waitFor(() => expect(screen.getByText(/unexpected error, please try again/i)).toBeInTheDocument())
+
+    })    
+})
+
+describe('When the user submit form , the server returns invalid request error', () => {
+    it('the form page must display the error message "The form is invalid, the fields [field1...fieldN] are required"', async () => {
+        server.use(
+            rest.post('/tasks', (req, res, ctx) => {
+              return res(
+                ctx.status(400),
+                ctx.json({ message: 'the form is invalid, the fields name, description, state are required' }),
+              )
+            }),
+          )
+
+        fireEvent.click(screen.getByRole('button', {name:/submit/i}));
+
+        await waitFor(() => expect(screen.getByText(/the form is invalid, the fields name, description, state are required/i)).toBeInTheDocument())
+
     })    
 })
