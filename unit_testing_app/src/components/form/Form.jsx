@@ -4,6 +4,8 @@ import { React, useState } from 'react';
 import { saveTask } from '../../services/TaskServices';
 import { CREATED_STATUS, ERROR_SERVER_STATUS, INVALID_REQUEST_STATUS } from '../../consts/httpStatus';
 
+
+
 export const Form = () => {
   const [sendData, setSendData] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -27,7 +29,15 @@ export const Form = () => {
     validateField({name:'state',value: state});
   }
 
-  //const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+  const handleFetchErrors = async (err) => {
+    if(err.status === ERROR_SERVER_STATUS){
+      setServerError('Unexpected error, please try again')
+    }
+    if(err.status === INVALID_REQUEST_STATUS){
+      const data = await err.json();
+      setServerError(data.message)
+    }
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -37,25 +47,25 @@ export const Form = () => {
     const {name,description,state} =  e.target.elements;
 
     validateForm({name: name.value, description: description.value, state: state.value});
-    
-    const response = await saveTask({
-      name: name.value, 
-      description: description.value, 
-      state: state.value
-    });
-    
-    if(response.status === CREATED_STATUS) {
-      e.target.reset();
-      setIsSuccess(true);
-    } 
-    if(response.status === ERROR_SERVER_STATUS){
-      setServerError('Unexpected error, please try again')
-    }
-    if(response.status === INVALID_REQUEST_STATUS){
-      const data = await response.json();
-      setServerError(data.message)
-    }
 
+    try {
+      const response = await saveTask({
+        name: name.value, 
+        description: description.value, 
+        state: state.value
+      });
+
+      if(!response.ok) {
+        throw response
+      }
+
+      if(response.status === CREATED_STATUS) {
+        e.target.reset();
+        setIsSuccess(true);
+      } 
+    } catch (err) {
+      handleFetchErrors(err);
+    }
     setSendData(false);
   }
 

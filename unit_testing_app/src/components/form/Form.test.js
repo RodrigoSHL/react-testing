@@ -136,7 +136,7 @@ describe('When the user submit form , the server returns invalid request error',
         server.use(
             rest.post('/tasks', (req, res, ctx) => {
               return res(
-                ctx.status(400),
+                ctx.status(INVALID_REQUEST_STATUS),
                 ctx.json({ message: 'the form is invalid, the fields name, description, state are required' }),
               )
             }),
