@@ -1,10 +1,8 @@
 import TextField from '@mui/material/TextField'
-import { Button, InputLabel, Select } from '@mui/material';
+import { Button, Container, InputLabel, Select, Grid, Typography } from '@mui/material';
 import { React, useState } from 'react';
 import { saveTask } from '../../services/TaskServices';
 import { CREATED_STATUS, ERROR_SERVER_STATUS, INVALID_REQUEST_STATUS } from '../../consts/httpStatus';
-
-
 
 export const Form = () => {
   const [sendData, setSendData] = useState(false);
@@ -54,7 +52,8 @@ export const Form = () => {
         description: description.value, 
         state: state.value
       });
-
+      
+      console.table(response)
       if(!response.ok) {
         throw response
       }
@@ -75,8 +74,12 @@ export const Form = () => {
   }
 
   return (
-    <>
-      <h1>Create task</h1>
+    <Container maxWidth="xs">
+      <Grid container>
+
+      </Grid>
+      
+      <Typography component="h1" variant="h5" align="center">Create task</Typography>
       {
         isSuccess && <p>Task saved</p>
       }
@@ -84,45 +87,64 @@ export const Form = () => {
         <p>{serverError}</p>
       }
       <form onSubmit={handleSubmit}>
-          <TextField
-            label="name" 
-            id="name"
-            name="name"
-            helperText={formErrors.name}
-            onBlur={handleBlur}
+        <Grid container spacing={3}>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="name" 
+              id="name"
+              name="name"
+              helperText={formErrors.name}
+              onBlur={handleBlur}
+              error={formErrors.name.length > 0}
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label="description" 
+              id="description"
+              name="description"
+              helperText={formErrors.description}
+              onBlur={handleBlur}
+              error={formErrors.description.length > 0}
 
-          />
-          <TextField
-            label="description" 
-            id="description"
-            name="description"
-            helperText={formErrors.description}
-            onBlur={handleBlur}
-          />
-          <InputLabel htmlFor="state">State</InputLabel>
-          <Select
-            native
-            inputProps={{
-              name: 'state',
-              id: 'state'
-            }}
-          >
-            <option aria-label='None' value=""/>
-            <option value="1">In progress</option>
-            <option value="2">Ok</option>
-            <option value="3">Not completed</option>
-  
-          </Select>
-          {formErrors.state.length && <p>{formErrors.state}</p>}
-          <Button 
-            type='submit'
-            disabled={sendData}
-          >
-            Submit
-          </Button>
-          
+            />
+          </Grid>
+          <Grid item xs={12}>
+            <InputLabel htmlFor="state">State</InputLabel>
+            <Select
+              error={formErrors.state.length > 0}
+              fullWidth
+              native
+              inputProps={{
+                name: 'state',
+                id: 'state'
+              }}
+            >
+              <option aria-label='None' value=""/>
+              <option value="1">In progress</option>
+              <option value="2">Ok</option>
+              <option value="3">Not completed</option>
+    
+            </Select>
+            {formErrors.state.length > 0 && <p>{formErrors.state}</p>}
+
+          </Grid>
+          <Grid item xs={12}>
+            <Button 
+              color='primary'
+              fullWidth
+              type='submit'
+              disabled={sendData}
+            >
+              Submit
+            </Button>
+            
+          </Grid>   
+        </Grid>
       </form>
-    </>
+    </Container>
   )
 }
 
