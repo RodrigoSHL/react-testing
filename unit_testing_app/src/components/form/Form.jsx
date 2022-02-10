@@ -1,7 +1,7 @@
 import TextField from '@mui/material/TextField'
 import { Button, Container, InputLabel, Select, Grid, Typography } from '@mui/material';
 import { React, useState } from 'react';
-import { saveTask } from '../../services/TaskServices';
+import { saveTask, getTasks } from '../../services/TaskServices';
 import { CREATED_STATUS, ERROR_SERVER_STATUS, INVALID_REQUEST_STATUS } from '../../consts/httpStatus';
 
 export const Form = () => {
@@ -13,6 +13,8 @@ export const Form = () => {
     description: '',
     state: '',
   });
+
+  const [listTask, setListTask] = useState([])
 
   const validateField = ({name, value}) => {
     setFormErrors((prevState) => ({
@@ -37,6 +39,7 @@ export const Form = () => {
     }
   }
 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -45,21 +48,17 @@ export const Form = () => {
     const {name,description,state} =  e.target.elements;
 
     validateForm({name: name.value, description: description.value, state: state.value});
-
     try {
       const response = await saveTask({
         name: name.value, 
         description: description.value, 
         state: state.value
       });
-      
-      console.table(response)
-      if(!response.ok) {
-        throw response
-      }
 
       if(response.status === CREATED_STATUS) {
         e.target.reset();
+        console.log(response)
+
         setIsSuccess(true);
       } 
     } catch (err) {
@@ -71,6 +70,12 @@ export const Form = () => {
   const handleBlur = (e) => {
     const {name, value} = e.target;
     validateField({name, value});
+  }
+
+  const handleTask = () => {
+    setListTask(getTasks());
+    console.log(listTask)
+
   }
 
   return (
@@ -144,6 +149,18 @@ export const Form = () => {
           </Grid>   
         </Grid>
       </form>
+      <Grid container>
+        <Grid item xs={12}>
+              <Button 
+                color='primary'
+                fullWidth
+                type='submit'
+                onClick={()=>handleTask()}
+              >
+                Get Client
+              </Button>
+          </Grid>   
+      </Grid>
     </Container>
   )
 }

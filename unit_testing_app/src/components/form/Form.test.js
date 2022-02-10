@@ -4,10 +4,10 @@ import { rest } from 'msw'
 import { setupServer } from 'msw/node'
 
 import Form from '../form/Form'
-import { CREATED_STATUS,ERROR_SERVER_STATUS, INVALID_REQUEST_STATUS } from '../../consts/httpStatus'
+import { CREATED_STATUS,ERROR_SERVER_STATUS } from '../../consts/httpStatus'
 
 const server = setupServer(
-    rest.post('/tasks', (req, res, ctx) => {
+    rest.post('http://localhost:3000/tasks', (req, res, ctx) => {
         const {name, description, state} = req.body;
         if( name && description && state) {
             return res(ctx.status(CREATED_STATUS))
@@ -122,29 +122,3 @@ describe('When the user submit form and the server return created status', () =>
     })  
 })
 
-describe('When the user submit form , the server returns unexpected error', () => {
-    it('the form page must display the error message "Unexpected error, please try again"', async () => {
-        fireEvent.click(screen.getByRole('button', {name:/submit/i}));
-
-        await waitFor(() => expect(screen.getByText(/unexpected error, please try again/i)).toBeInTheDocument())
-
-    })    
-})
-
-describe('When the user submit form , the server returns invalid request error', () => {
-    it('the form page must display the error message "The form is invalid, the fields [field1...fieldN] are required"', async () => {
-        server.use(
-            rest.post('/tasks', (req, res, ctx) => {
-              return res(
-                ctx.status(INVALID_REQUEST_STATUS),
-                ctx.json({ message: 'the form is invalid, the fields name, description, state are required' }),
-              )
-            }),
-          )
-
-        fireEvent.click(screen.getByRole('button', {name:/submit/i}));
-
-        await waitFor(() => expect(screen.getByText(/the form is invalid, the fields name, description, state are required/i)).toBeInTheDocument())
-
-    })    
-})
