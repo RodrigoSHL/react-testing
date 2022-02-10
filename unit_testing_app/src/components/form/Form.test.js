@@ -6,6 +6,7 @@ import { setupServer } from 'msw/node'
 import Form from '../form/Form'
 import { CREATED_STATUS,ERROR_SERVER_STATUS } from '../../consts/httpStatus'
 
+//Se usa mock server worker (msw) para simular un endpoint 
 const server = setupServer(
     rest.post('http://localhost:3000/tasks', (req, res, ctx) => {
         const {name, description, state} = req.body;
